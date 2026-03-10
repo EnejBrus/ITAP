@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# VS Code
+.vscode/
+
+# Virtual environments
+venv/
+.env/
+.env
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Data files (adjust if you need to track them)
+*.npz
+*.npy
+*.csv
+*.h5
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
