@@ -1,0 +1,133 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{amsmath}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+
+    {\Large Univerza v Ljubljani\par}
+    \vspace{0.5cm}
+    {\large Fakulteta za matematiko in fiziko\par}
+
+    \vfill
+
+    {\Huge \bfseries Poročilo 1. domače naloge\par}
+    \vspace{1cm}
+    {\Large Predmet: Izbrane teme iz analize podatkov\par}
+
+    \vfill
+
+    \begin{flushleft}
+        \large
+        \textbf{Študent:} Enej Brus\\
+        \textbf{Vpisna številka:} 27221041  \\
+     \end{flushleft}
+
+    \vfill
+
+    {\large Ljubljana, \today\par}
+\end{titlepage}
+
+
+\tableofcontents
+\newpage
+
+\section{Uvod}
+V tem poročilu bom opisal postopek reševanja 
+domače naloge. Na kratko bom opisal cilje naloge, 
+uporabljene podatke in izbrane metode obdelave ter analize. 
+V nadaljevanju bo prikazan tudi postopek reševanja,
+pomembnejše ugotovitve in kratek povzetek rezultatov.
+
+
+\section{1. naloga: Učenje polinomskih modelov in regularizacija}
+
+\subsection{Polinomske značilke}
+Cilj prve podnaloge je bil pripraviti vhodne podatke v obliki polinomskih značilk, ki omogočajo učenje polinomskih modelov različne stopnje. Implementiral sem funkcijo, ki za podan vektor $x$ in stopnjo $d$ zgradi Vandermondovo matriko $[1, x, x^2, \ldots, x^d]$.
+Pravilnost sem preveril na enostavnem primeru z majhnim vektorjem,
+kjer sem ročno primerjal izračunano matriko z znanimi potenčnimi vrednostmi.
+
+\subsection{Linearna regresija in napoved}
+V drugi podnalogi je bil cilj izračunati koeficiente polinomskega modela z linearno regresijo in pripraviti funkcijo za napovedovanje. Uporabil sem formulo $(X^T X)^{-1} X^T y$, pri čemer sem zaradi numerične stabilnosti pri višjih stopnjah in malo točkah uporabil psevdo-inverz.
+Funkcijo za napoved sem definiral kot matrčno množenje $X \beta$. Preverjanje na sintetičnem testnem primeru je pokazalo, da regulariziran in neregulariziran izračun pri zelo majhnem regularizacijskem parametru dasta zelo podobne rezultate.
+
+\subsection{Vpliv stopnje polinoma na napako}
+Tretja podnaloga je preučevala, kako izbira stopnje polinoma vpliva na prileganje modela in napako na učni ter testni množici. Za pet različnih podatkovnih množic sem učil polinome stopenj od $d=1$ do $d=6$ in za vsako kombinacijo izračunal MSE na učni in testni množici.
+Rezultati pokažejo tipičen kompromis pristranskost--varianca: pri zelo nizkih stopnjah je model podučen (visoka učna in testna napaka), pri zelo visokih stopnjah se učna napaka približa nič, testna napaka pa na nekaterih množicah skokovito naraste, kar kaže na močno prenaučenost. Najbolj smiselne stopnje so v sredini (npr. $d=2$ ali $d=3$), kjer dosežemo nizko testno napako brez ekstremne prenaučenosti.
+
+\subsection{Stabilnost koeficientov pri različnih stopnjah}
+V četrti podnalogi sem primerjal stabilnost koeficientov za polinome dveh različnih stopenj (npr. $d=3$ in $d=5$). Za vsako od petih podatkovnih množic sem izračunal koeficiente in nato varianco posameznih koeficientov ter povprečno varianco čez vse koeficiente.
+Opazil sem, da imajo koeficienti polinoma stopnje $d=3$ precej manjšo povprečno varianco kot koeficienti polinoma stopnje $d=5$, kar pomeni, da je nižja stopnja bolj stabilna glede na spremembe v učnih podatkih. Višja stopnja polinoma se sicer lahko bolje prilega posamezni množici, a to doseže na račun velike variance koeficientov in slabše posplošitve.
+
+\subsection{Vpliv regularizacije na stabilnost in napako}
+V peti podnalogi sem uvajal Tihonovo regularizacijo,
+kjer koeficiente izračunamo po formuli $(X^T X + \lambda I)^{-1} X^T y$.
+Za polinom stopnje $d=6$ sem preizkusil več vrednosti $\lambda$ iz 
+nabora $[10^{-8}, 10^{-4}, 10^{-2}, 1, 10]$ in za vsako izračunal povprečno varianco
+koeficientov ter povprečni MSE na učni in testni množici.
+Pri zelo majhnem $\lambda$ je bila varianca koeficientov zelo velika
+in model močno prenaučen (zelo nizka učna, visoka testna napaka).
+Z včanjem $\lambda$ pa je stabilnost koeficientov naraščala, saj je 
+povprečna varianca močno padla. Najmanjša testna napaka se je pojavila pri srednji 
+vrednosti regularizacije (približno $\lambda = 10^{-2}$), kjer smo dosegli dobro 
+ravnotežje med stabilnostjo in točnostjo modela; pri prevelikem $\lambda$ se je model 
+sicer stabiliziral, a postal preveč podučen.
+
+
+\section{Klasifikacija tumorjev dojke}
+
+\subsection{Opis naloge}
+V drugi nalogi sem analiziral podatke iz datoteke \texttt{dn1\_e2.npz}, ki vsebuje 569 primerov tumorjev dojke in 30 napovednih spremenljivk, izračunanih iz slik celic tumorja. Cilj je bil sestaviti čim boljši napovedni model za binarno klasifikacijo, ki za vsak primer napove, ali gre za maligni ($y = 0$) ali benigni ($y = 1$) tumor.
+Naloga je zahtevala, da poleg same zmogljivosti modela ocenim tudi stabilnost ocene (s prečnim preverjanjem) ter utemeljim izbiro končnega modela in uporabljene metrike.
+
+\subsection{Pristop, uporabljene metode in koda}
+Podatke sem naložil neposredno iz datoteke \texttt{dn1\_e2.npz} (matrika značilk $X$ in oznake $y$). Množica vsebuje 569 primerov in 30 značilk, razredi pa so zmerno neuravnoteženi (benigni približno 62{,}7\%, maligni približno 37{,}3\%).
+
+Kot glavno metriko sem izbral \textbf{F1 za maligni razred} ($y=0$). Razlog je, da pri tej nalogi želimo dobro zaznavati maligne primere, pri čemer je pomembno ravnotežje med priklicem in natančnostjo ravno za maligni razred. Zato sem uporabil \texttt{make\_scorer(f1\_score, pos\_label=0)}.
+
+Primerjal sem tri tipe modelov:
+\begin{itemize}
+    \item logistično regresijo (linearni model),
+    \item k-najbližjih sosedov (KNN),
+    \item odločitveno drevo.
+\end{itemize}
+
+Pri logistični regresiji in KNN sem uporabil cevovod s standardizacijo značilk (\texttt{StandardScaler}), pri drevesu pa standardizacija ni potrebna. Izbiro modela sem izvedel z \textbf{ugnezdenim prečnim preverjanjem (nested CV)}:
+\begin{itemize}
+    \item zunanja zanka: \texttt{RepeatedStratifiedKFold} s 5 razcepi in 2 ponovitvama (ocena stabilnosti),
+    \item notranja zanka: \texttt{StratifiedKFold} s 3 razcepi (izbira hiperparametrov v \texttt{GridSearchCV}).
+\end{itemize}
+
+Po primerjavi sem najboljši model še enkrat prilagodil na vseh podatkih z dodatnim \texttt{GridSearchCV} (5-fold), da sem dobil končne hiperparametre.
+
+\subsection{Rezultati}
+Rezultati nested CV (povprečje F1 za maligni razred $\pm$ standardni odklon) so:
+\begin{itemize}
+    \item logistična regresija: $0{,}9661 \pm 0{,}0175$,
+    \item KNN: $0{,}9562 \pm 0{,}0206$,
+    \item odločitveno drevo: $0{,}9065 \pm 0{,}0355$.
+\end{itemize}
+
+Logistična regresija je imela najvišje povprečje in hkrati nižjo variabilnost. Pri končni nastavitvi (dodatni 5-fold \texttt{GridSearchCV}) so bili najboljši hiperparametri:
+\[
+\{\texttt{clf\_\_C}=1.0,\ \texttt{clf\_\_penalty}='l1'\}
+\]
+in najboljši 5-fold rezultat
+\[
+\text{F1}_{\text{maligni}} = 0{,}9692.
+\]
+
+\subsection{Ugotovitve}
+Na podlagi rezultatov sem izbral \textbf{logistično regresijo} kot končni model, ker doseže najboljšo kombinacijo točnosti in stabilnosti ocene. KNN je bil blizu, vendar dosledno nekoliko slabši po povprečnem F1 in z večjo variabilnostjo. Odločitveno drevo je imelo občutno nižji F1 ter največji standardni odklon, zato je najslabša izbira.
+
+Ključna ugotovitev je, da za to podatkovno množico dobro deluje že linearen model, če je pravilno regulariziran in če značilke standardiziramo. Uporaba nested CV je bila pomembna, ker je omogočila pošteno primerjavo modelov in realnejšo oceno stabilnosti kot en sam razcep učna/testna množica.
+
+
+
+
+\end{document}
