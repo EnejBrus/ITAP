@@ -1,0 +1,253 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{hyperref}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+
+    {\Large Univerza v Ljubljani\par}
+    \vspace{0.5cm}
+    {\large Fakulteta za matematiko in fiziko\par}
+
+    \vfill
+
+    {\Huge \bfseries Poročilo 2. domače naloge\par}
+    \vspace{1cm}
+    {\Large Predmet: Izbrane teme iz analize podatkov\par}
+
+    \vfill
+
+    \begin{flushleft}
+        \large
+        \textbf{Študent:} Enej Brus\\
+        \textbf{Vpisna številka:} 27221041\\
+     \end{flushleft}
+
+    \vfill
+
+    {\large Ljubljana, \today\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\section*{Uvod}
+V tem poročilu bomo opisali postopek reševanja 2. domače naloge pri predmetu Izbrane teme iz analize podatkov.
+Naloga je razdeljena na tri vsebinske dele:
+\begin{itemize}
+    \item izbor in analiza modelov,
+    \item implementacija vrečenja z naključnimi podprostori,
+    \item klasifikacija slik oblačil z nevronskimi mrežami.
+\end{itemize}
+
+
+\section*{Naloga 1: Izbira modelov}
+
+\subsection*{1.a Identifikacija modelov po odločitvenih mejah}
+\begin{itemize}
+    \item \textbf{Model A:}
+    \begin{itemize}
+        \item Ime modela: KNN (najverjetneje z majhnim \texttt{k}, npr. \texttt{k=1}).
+        \item Zakaj si model izbral: Meja je zelo nelinearna in lokalno ``razcefrana'' z majhnimi otočki. To je tipično za KNN, ko napoved močno določajo najbližji posamezni primeri.
+        \item Kako bi ga izboljšal: Povečal bi vrednost parametra \texttt{k} (število upoštevanih sosedov).
+        \item Kako bi to vplivalo na krivuljo: Meja bi bila bolj gladka in manj občutljiva na šum. Manj bi bilo majhnih otočkov in model bi bil stabilnejši na testu.
+    \end{itemize}
+
+    \item \textbf{Model B:}
+    \begin{itemize}
+        \item Ime modela: Naključni gozd (\texttt{RandomForest}).
+        \item Zakaj si model izbral: Meje so sestavljene iz pravokotnih, na osi poravnanih rezov. Prisotnih je več nivojev verjetnosti, kar kaže na povprečenje napovedi več dreves.
+        \item Kako bi ga izboljšal: Povečal bi \texttt{n\_estimators}, omejil globino z \texttt{max\_depth} in povečal \texttt{min\_samples\_leaf}.
+        \item Kako bi to vplivalo na krivuljo: Prehodi bi bili bolj stabilni in manj nazobčani, model pa bi manj sledil posameznim šumnim primerom.
+    \end{itemize}
+
+    \item \textbf{Model C:}
+    \begin{itemize}
+        \item Ime modela: Odločitveno drevo (\texttt{DecisionTree}).
+        \item Zakaj si model izbral: Odločitvene meje so ostro pravokotne in poravnane z osmi. Prehodi med regijami so diskretni, kar je značilno za eno samo drevo.
+        \item Kako bi ga izboljšal: Uvedel bi regularizacijo z \texttt{max\_depth}, \texttt{min\_samples\_leaf} ali \texttt{ccp\_alpha}.
+        \item Kako bi to vplivalo na krivuljo: Število pravokotnih rezov bi se zmanjšalo, meja bi bila enostavnejša in bolj stabilna pri posploševanju.
+    \end{itemize}
+\newpage
+    \item \textbf{Model D:}
+    \begin{itemize}
+        \item Ime modela: Logistična regresija (alternativno tudi linearni SVM s kalibracijo verjetnosti).
+        \item Zakaj si model izbral: Meja je skoraj linearna, verjetnost pa se gladko spreminja po prostoru, kar je značilno za linearne klasifikatorje.
+        \item Kako bi ga izboljšal: Dodal bi nelinearne/interakcijske značilke in prilagodil regularizacijo (\texttt{C}). Pri SVM bi testiral tudi RBF jedro.
+        \item Kako bi to vplivalo na krivuljo: Pri linearnem modelu bi meja ostala pretežno ravna in stabilna, z nelinearnimi značilkami ali RBF jedrom pa bi postala bolj ukrivljena in bi bolje sledila strukturi podatkov.
+    \end{itemize}
+\end{itemize}
+
+\subsection*{1.b Analiza štirih scenarijev}
+\textbf{Scenarij A:} Ekipa podatkovnih inženirjev v finančnem podjetju je razvila model podpornih vektorjev (SVM) z linearnim jedrom za odkrivanje goljufivih bančnih transakcij. Podatki vsebujejo 500.000 transakcij (s podatki: id transakcije, čas transakcije, znesek transakcije, diskretna spremenljivka namen, podatki prejemnika, podatki pošiljatelja, ...), od katerih je le nekaj označenih za goljufive. Model je po treniranju dosegel skoraj popolno točnost na testnih podatkih, kar je ekipi dalo občutek, da je model izjemno uspešen. Po namestitvi v produkcijo so stranke začele poročati, da goljufive transakcije niso bile zaznane.
+
+\begin{itemize}
+    \item Kaj je problem: Gre za izrazito neuravnoteženost razredov. Ker je goljufivih transakcij zelo malo, lahko model preprosto napove, da je vsaka transakcija ``veljavna'' in s tem doseže 99.9\% točnost, čeprav v praksi ne opravlja svoje naloge. Točnost (\texttt{accuracy}) je v tem primeru povsem zavajajoča metrika.
+    \item Kako bi ga popravil: Najprej bi spremenil metriko ocenjevanja. Namesto točnosti bi uporabil metriko, ki kaznuje zgrešene goljufije, kot so priklic (\texttt{recall}), natančnost (\texttt{precision}), \texttt{F1}-mera, ali \texttt{ROC-AUC} ali \texttt{PR-AUC}. Prav tako bi morali primerno utežiti podatke. Na primer z uteževanjem razredov (v SVM nastavitev penalizacije tako, da so napake pri manjšinskem razredu dražje) ali z uporabo tehnik za uravnoteženje vzorcev (npr. SMOTE ali podvzorčenje večinskega razreda).
+\end{itemize}
+
+\textbf{Scenarij B:} Podjetje za nepremičnine želi napovedovati vrednosti stanovanj s pomočjo modela KNN (\texttt{k=5}). Model temelji na različnih lastnostih stanovanj (ki igrajo vlogo napovednih spremenljivk): število sob, površina v kvadratnih metrih, oddaljenost od centra mesta v minutah hoje, leto izgradnje, ... Kljub temu, da so podatki kakovostni, model dosega le skromne rezultate. Ekipa je preizkusila različne vrednosti \texttt{k} od 1 do 30, a bistvenih izboljšav ni bilo.
+
+\begin{itemize}
+    \item Kaj je problem: Model KNN izračunava razdalje (npr. evklidsko) med primeri, da bi našel najbližje sosede. V tem primeru imajo napovedne spremenljivke popolnoma različne skale (leto izgradnje je v tisočih, površina v stotinah, število sob pa od 1 do 10). Zaradi tega bodo spremenljivke z večjimi številskimi vrednostmi (npr. leto ali površina) povsem prevladale pri izračunu razdalje, vpliv manjših (npr. števila sob) pa bo zanemarljiv.
+    \item Kako bi ga popravil: Preden podatke podamo modelu KNN, je nujno potrebno izvesti skaliranje (normalizacijo ali standardizacijo) vseh napovednih spremenljivk. Z uporabo npr. standardizacije (\texttt{Z}-vrednosti) bodo imele vse spremenljivke povprečje 0 in varianco 1, kar bo omogočilo, da bodo vse lastnosti enakovredno prispevale k izračunu razdalje.
+\end{itemize}
+
+\textbf{Scenarij C:} Ekipa želi za napoved cene rabljenih avtomobilov izbrati najboljši model izmed petih kandidatov: linearne regresije, polinomskih regresij stopenj 2, 3 in 4 ter naključnega gozda. Na voljo imajo 400 primerov, ki jih razdelijo na 320 učnih in 80 testnih. Za vsakega kandidata izmerijo napako na testni množici in izberejo model z najnižjo izmerjeno napako --- polinomsko regresijo stopnje 3 --- ter napovejo, da bo ta model v produkciji dosegal enako napako. Njihov kolega opozori, da bo dejanska napaka v produkciji verjetno višja, a ekipa ne razume zakaj.
+
+\begin{itemize}
+    \item Kaj je problem: Ekipa je uporabila testno množico za izbiro najboljšega modela. Ker so izbrali tisti model, ki se je najbolje odrezal prav na tej specifični testni množici, je ta napaka pristranska in preveč optimistična ocena za napake v produkciji (gre za t.i. uhajanje informacij oz. data leakage v fazi evalvacije).
+    \item Kako bi ga popravil: Podatke bi razdelil na učno, validacijsko in testno množico. Model bi učil na učni množici, najboljši model izbral na podlagi napake na validacijski množici, testno množico pa bi uporabil samo enkrat na koncu za končno oceno. Testna množica ostane popolnoma neodvisna, zato napaka na njej predstavlja nepristransko oceno uspešnosti v produkciji. Druga možnost bi bila, da bi na učni množici uporabil \texttt{k}-fold cross-validation za izbiro najboljšega modela. Cross-validation omogoča, da model večkrat treniramo in validiramo na različnih delih podatkov, zato dobimo bolj stabilno in zanesljivo oceno napake.
+\end{itemize}
+
+\textbf{Scenarij D:} Analitiki v zavarovalnici so zgradili model za napoved verjetnosti prometne nesreče voznika v naslednjem letu, pri čemer je ciljna spremenljivka binarna (nesreča / ni nesreče). Podatki za napovedne spremenljivke so sestavljeni iz starosti voznika, povprečnega števila prevoženih kilometrov v zadnjih letih, avta, ki ga vozi, ... Za napovedovanje verjetnosti nesreče so uporabili linearno regresijo, naučeno na 50.000 primerih. Čeprav model dosega boljše rezultate kot prejšnji poskus, je pravna služba uporabo modela ustavila, saj ne zaupa napovedim, ki jih model vrača.
+
+\begin{itemize}
+    \item Kaj je problem: Uporabljena je linearna regresija za binarni problem, kar pomeni, da model lahko napoveduje vrednosti izven intervala [0,1], kar ni smiselno za verjetnosti. Zato pravna služba ne zaupa rezultatom.
+    \item Kako bi ga popravil: Namesto linearne regresije bi uporabil logistično regresijo. Logistična regresija uporabi sigmoidno funkcijo, ki zagotovi, da so vse izhodne vrednosti modela vedno preslikane in zamejene na interval med 0 in 1, kar predstavlja veljavne verjetnosti.
+\end{itemize}
+
+\section*{Naloga 2: Vrečenje z naključnimi podprostori}
+
+V tej nalogi je cilj, da brez uporabe vgrajenega \texttt{BaggingClassifier} sami implementiramo vrečenje z odločitvenimi drevesi in naključnimi podprostori značilk. Najprej pripravimo osnovni gradnik za bootstrap vzorčenje in funkcijo za izbor podprostora značilk, nato sestavimo razred ansambla ter primerjamo več konfiguracij (eno drevo, samo bootstrap, samo podprostor, kombinacija obojega). Na koncu analiziramo metrike (točnost, AUC), korelacijo med drevesi in napovedno moč posameznih spremenljivk.
+
+\subsection*{2.a Bootstrap vzorčenje}
+Cilj podnaloge 2.a je bil implementirati bootstrap vzorčenje, ki je osnovni gradnik vrečenja. Pri bootstrapu iz učne množice naključno vzorčimo primere \emph{z vračanjem}, zato se nekateri primeri pojavijo večkrat, nekateri pa sploh ne.
+
+To smo dosegli s funkcijo \texttt{vzorci\_z\_vracanjem(X, y)}. Najprej določimo število primerov \texttt{n\_primerov}, nato z \texttt{np.random.choice(..., replace=True)} izberemo indekse enake dolžine kot vhodna množica in na koncu vrnemo \texttt{X[indeksi]} ter \texttt{y[indeksi]}. V kodi smo rezultat preverili z \texttt{assert} pogoji (ujemanje oblik) in izpisom števila unikatnih primerov.
+
+Rezultat je skladen s teorijo bootstrapa. V enem bootstrap vzorcu je pričakovano približno $63.2\%$ unikatnih primerov iz originalne množice, kar pomeni dovolj raznolikosti med vzorci za posamezna drevesa v ansamblu. To je pomembno, ker prav ta raznolikost zmanjšuje varianco in izboljša stabilnost končne napovedi po glasovanju.
+
+\subsection*{2.b Naključni podprostor značilk}
+Cilj podnaloge 2.b je bil implementirati naključni izbor podprostora značilk, da posamezna drevesa v ansamblu ne uporabljajo vedno istih vhodnih spremenljivk. S tem povečamo raznolikost dreves in zmanjšamo medsebojno korelacijo njihovih napovedi.
+
+To smo izvedli s funkcijo \texttt{nakljucni\_podprostor(X, n\_features)}. V kodi najprej preverimo veljavnost parametra \texttt{n\_features} (mora biti med 1 in številom vseh značilk), nato z \texttt{np.random.choice(..., replace=False)} izberemo indekse stolpcev brez ponavljanja. Funkcija vrne tako podmatriko \texttt{X\_sub} kot tudi seznam indeksov \texttt{indices}, da lahko pozneje pri napovedovanju uporabimo isti podprostor.
+
+Rezultat je pokazal, da funkcija vrača pravilno obliko podmatrike in ustrezno število indeksov (preverjeno z \texttt{assert}). Tak pristop je ključen za ansambelske metode tipa random subspace, saj prispeva k manjši korelaciji med drevesi in s tem praviloma k boljši generalizaciji modela.
+
+\subsection*{2.c Razred VrecaModelov}
+Cilj podnaloge 2.c je bil sestaviti celoten ansambelski model, ki združi bootstrap vzorčenje in naključne podprostore v enoten razred \texttt{VrecaModelov}. S tem dobimo lastno implementacijo bagging klasifikatorja, ki temelji na odločitvenih drevesih.
+
+V implementaciji metoda \texttt{fit} za vsako drevo izvede naslednje korake: po potrebi vzorči podatke z vračanjem, izbere podprostor značilk in nauči \texttt{DecisionTreeClassifier}. Pri tem se za vsako drevo shranijo tudi indeksi uporabljenih značilk. Metoda \texttt{predict} nato izvede večinsko glasovanje napovedi vseh dreves, metoda \texttt{predict\_proba} pa vrne deleže glasov po razredih (normalizirane verjetnosti).
+
+Rezultat preverjanja je bil uspešen. Oblike izhodov so pravilne, vsota verjetnosti v vsaki vrstici je enaka 1, napoved \texttt{predict} se ujema z \texttt{argmax(predict\_proba)}, model pa je primerljiv z enim samim drevesom. To potrjuje, da razred deluje pravilno in je pripravljen za primerjavo različnih konfiguracij v naslednjem delu naloge.
+
+\subsection*{2.d Primerjava konfiguracij}
+Cilj podnaloge 2.d je bil empirično preveriti, kako na uspešnost ansambla vplivata dva mehanizma za povečanje raznolikosti dreves: bootstrap vzorčenje primerov in naključni podprostori značilk. Zato smo primerjali štiri različne konfiguracije, od enega samega drevesa do kombinacije obeh pristopov.
+
+V kodi smo za vsako konfiguracijo model naučili in nato z enotno evalvacijsko funkcijo izračunali točnost na učni in testni množici, AUC ter povprečno Pearsonovo korelacijo napovedi med drevesi. Poleg tega smo narisali histogram zaupanja (maksimalna napovedana verjetnost) ločeno za pravilne in napačne napovedi, da smo ocenili tudi zanesljivost napovedi.
+
+Primerjane so bile štiri konfiguracije:
+\begin{enumerate}
+    \item eno odločitveno drevo,
+    \item vrečenje samo z bootstrap,
+    \item vrečenje samo z naključnim podprostorom,
+    \item kombinacija bootstrap + podprostor.
+\end{enumerate}
+
+Rezultati (test):
+\begin{itemize}
+    \item Konfiguracija 1: točnost $0.9415$, AUC $0.9438$,
+    \item Konfiguracija 2: točnost $0.9591$, AUC $0.9929$,
+    \item Konfiguracija 3: točnost $0.9591$, AUC $0.9967$,
+    \item Konfiguracija 4: točnost $0.9708$, AUC $0.9980$.
+\end{itemize}
+
+Rezultati kažejo, da je najboljša konfiguracija 4 (bootstrap + podprostor), kjer je bila hkrati tudi najnižja povprečna korelacija med drevesi (približno $0.6826$). To potrjuje glavno idejo ansamblov. Bolj kot so osnovni modeli raznoliki (manj korelirani), bolj učinkovito se njihove napake izničijo pri skupni napovedi, zato je končni model praviloma točnejši in stabilnejši.
+
+\subsection*{2.e Napovedna moč spremenljivk}
+Cilj podnaloge 2.e je bil oceniti, katere napovedne spremenljivke največ prispevajo k odločitvam ansambla v najboljši konfiguraciji (bootstrap + podprostor). S tem dobimo boljšo interpretacijo modela in vpogled v to, katere meritve so za klasifikacijo malignih/benignih tumorjev najbolj informativne.
+
+V kodi smo naučili ansambel s 100 drevesi in za vsako drevo prebrali \texttt{feature\_importances\_}. Ker vsako drevo vidi le svoj podprostor značilk, smo značilnosti najprej preslikali nazaj na vseh 30 značilk, nato pa jih sešteli in povprečili čez vsa drevesa. Tako smo dobili globalno povprečno napovedno moč vsake značilke in jo vizualizirali s stolpčnim diagramom.
+
+\newpage
+Rezultat pokaže, da so najbolj pomembne značilke:
+
+\begin{enumerate}
+    \item \texttt{worst radius} ($0.1218$),
+    \item \texttt{worst perimeter} ($0.1187$),
+    \item \texttt{worst concave points} ($0.0946$).
+\end{enumerate}
+
+\section*{Naloga 3: Klasifikacija oblačil s slikovnimi podatki}
+
+\subsection*{Kaj je naloga zahtevala in kako smo se je lotili}
+Naloga je zahtevala, da na podatkih Fashion-MNIST zgradimo nevronski model v PyTorch, ga primerjamo vsaj z enim ne-nevronskim modelom in poleg uspešnosti poročamo tudi stabilnost ocene. Zato smo delo razdelili na naslednje korake: (1) priprava podatkov in kratka analiza, (2) izbira primerjalnih modelov, (3) implementacija obeh modelov, (4) primerjava metrik in intervalov zaupanja, (5) izbira boljšega modela z razlago.
+
+Uporabili smo podvzorec podatkov:
+\begin{itemize}
+    \item 10.000 učnih primerov,
+    \item 2.000 testnih primerov.
+\end{itemize}
+
+Kot glavno mero smo uporabili \textbf{macro-F1}, ker enakovredno obravnava vseh 10 razredov. Dodatno smo spremljali še \emph{accuracy}.
+
+\subsection*{Izbira modelov: zakaj Random Forest in CNN}
+Izbrali smo dva ključna modela:
+\begin{itemize}
+    \item \textbf{Random Forest} kot ne-nevronski baseline,
+    \item \textbf{CNN} kot glavni nevronski model za slike.
+\end{itemize}
+
+Random Forest smo izbrali zato, ker je robusten, enostaven za uporabo in daje dobro primerjalno osnovo. CNN smo izbrali zato, ker je pri slikovnih podatkih naravna izbira. Konvolucijski filtri izkoriščajo lokalno prostorsko strukturo (robove, teksture, oblike), ki jo klasični modeli na sploščenih vhodih izgubijo.
+
+Poleg tega smo dodatno testirali tudi MLP, vendar ga nismo izbrali kot ključni model, ker je dosegel slabše rezultate.
+
+\subsection*{Kako smo modela implementirali}
+\paragraph{Random Forest}
+Slike velikosti $28\times 28$ smo sploščili v vektorje dolžine 784 in naučili \texttt{RandomForestClassifier} (350 dreves, \texttt{max\_features='sqrt'}).
+
+\paragraph{CNN}
+Implementirali smo konvolucijsko mrežo z dvema konvolucijskima blokoma (\texttt{Conv + ReLU + BatchNorm + MaxPool + Dropout}) in končnim polno povezanim klasifikatorjem. Učenje je potekalo z optimizatorjem Adam, funkcijo izgube \texttt{CrossEntropyLoss}, regularizacijo \texttt{dropout} in \texttt{weight\_decay}. Za izbor najboljše različice modela smo spremljali validacijski \texttt{macro-F1} in shranili najboljšo epoho.
+
+\subsection*{Rezultati in stabilnost ocene}
+Stabilnost smo ocenili z 95\% bootstrap intervali zaupanja (500 ponovitev) na testni množici.
+
+\begin{center}
+\begin{tabular}{>{\raggedright\arraybackslash}p{4cm}ccc}
+\toprule
+Model & Accuracy & Macro-F1 & 95\% CI (Macro-F1) \\
+\midrule
+Random Forest & 0.8505 & 0.8511 & [0.8360, 0.8657] \\
+MLP & 0.8165 & 0.8190 & [0.8007, 0.8340] \\
+CNN & 0.8865 & 0.8876 & [0.8744, 0.9003] \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Iz rezultatov je razvidno:
+\begin{itemize}
+    \item CNN doseže najvišjo točnost in najvišji macro-F1,
+    \item Random Forest je dober baseline, vendar zaostane za CNN,
+    \item MLP je bil dodatno preizkušen, a je bil najslabši med tremi pristopi.
+\end{itemize}
+
+\subsection*{Kateri model je boljši in zakaj}
+Kot ključni model smo izbrali \textbf{CNN}, ker je dosegel najboljše vrednosti obeh metrik (\emph{accuracy} in \emph{macro-F1}) ter najboljšo stabilnost ocene. Glavni razlog je, da CNN neposredno modelira 2D strukturo slike, medtem ko Random Forest in MLP delujeta na sploščenih predstavitvah, kjer se del pomembnih prostorskih informacij izgubi.
+
+\section*{Viri}
+
+\begin{enumerate}
+    \item GeeksforGeeks: \emph{Deep Learning - Neural Networks: A Beginner's Guide}\\
+    \url{https://www.geeksforgeeks.org/deep-learning/neural-networks-a-beginners-guide/}
+    
+    \item GeeksforGeeks: \emph{Machine Learning - Random Forest Algorithm}\\
+    \url{https://www.geeksforgeeks.org/machine-learning/random-forest-algorithm-in-machine-learning/}
+    
+    \item PyTorch Documentation: \emph{PyTorch: An Imperative Style, High-Performance Deep Learning Library}\\
+    \url{https://pytorch.org/}
+    
+    \item Scikit-learn Documentation: \emph{Machine Learning in Python}\\
+    \url{https://scikit-learn.org/}
+\end{enumerate}
+
+\end{document}
