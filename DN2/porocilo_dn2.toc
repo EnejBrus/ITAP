@@ -1,2 +1,19 @@
+\contentsline {section}{Uvod}{2}{section*.2}%
+\contentsline {section}{Naloga 1: Izbira modelov}{2}{section*.3}%
+\contentsline {subsection}{1.a Identifikacija modelov po odločitvenih mejah}{2}{section*.4}%
+\contentsline {subsection}{1.b Analiza štirih scenarijev}{3}{section*.5}%
+\contentsline {section}{Naloga 2: Vrečenje z naključnimi podprostori}{4}{section*.6}%
+\contentsline {subsection}{2.a Bootstrap vzorčenje}{5}{section*.7}%
+\contentsline {subsection}{2.b Naključni podprostor značilk}{5}{section*.8}%
+\contentsline {subsection}{2.c Razred VrecaModelov}{5}{section*.9}%
+\contentsline {subsection}{2.d Primerjava konfiguracij}{5}{section*.10}%
+\contentsline {subsection}{2.e Napovedna moč spremenljivk}{6}{section*.11}%
+\contentsline {section}{Naloga 3: Klasifikacija oblačil s slikovnimi podatki}{7}{section*.12}%
+\contentsline {subsection}{Kaj je naloga zahtevala in kako smo se je lotili}{7}{section*.13}%
+\contentsline {subsection}{Izbira modelov: zakaj Random Forest in CNN}{7}{section*.14}%
+\contentsline {subsection}{Kako smo modela implementirali}{7}{section*.15}%
 \contentsline {paragraph}{Random Forest}{7}{section*.16}%
 \contentsline {paragraph}{CNN}{7}{section*.17}%
+\contentsline {subsection}{Rezultati in stabilnost ocene}{8}{section*.18}%
+\contentsline {subsection}{Kateri model je boljši in zakaj}{8}{section*.19}%
+\contentsline {section}{Viri}{8}{section*.20}%
