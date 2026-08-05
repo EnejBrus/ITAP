@@ -1,0 +1,7 @@
+# Preverjeno s Python 3.10.19
+numpy==2.2.6
+pandas==2.3.3
+scipy==1.15.3
+scikit-learn==1.7.2
+imbalanced-learn==0.14.2
+matplotlib==3.10.8
